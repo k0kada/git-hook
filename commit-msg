@@ -1,0 +1,18 @@
+#!/bin/sh
+
+#ブランチ名を取得 もっといい方法あるかも。
+Branch="$(git branch | grep "*" | awk '{print $2}')"
+
+if [ $Branch == "master" ] ; then
+    #masterでのコミットは別ルールにしたかったのでとりあえず分けてみた
+    ReqestNo=""
+    CommitBranch="master"
+else
+    #正規表現でブランチ名からとチケット番号と、コミット番号抜きのブランチ名を取得
+    ReqestNo="$(echo $Branch | sed -e "s/[^0-9]//g")"
+fi
+
+#コミットメッセージの最初にチケット番号を、最後にコミット番号抜きのブランチ名を追加
+mv $1 $1.tmpbycommit-msg
+echo -n "[#$ReqestNo] " > $1
+cat $1.tmpbycommit-msg >> $1
