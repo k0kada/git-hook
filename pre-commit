@@ -1,4 +1,5 @@
 #!/bin/sh
+
 if git rev-parse --verify HEAD >/dev/null 2>&1
 then
     against=HEAD
@@ -14,15 +15,18 @@ IS_ERROR=0
 for FILE in `git diff-index --name-status $against -- | grep -E '^[AUM].*\.php$'| cut -c3-`; do
 
     # シンタックスのチェック
-    if php -l $FILE; then
+    if parallel-lint $FILE; then
+
         # PSR準拠でコード書き換え
-        php-cs-fixer fix $FILE --rules='@PSR2'
-	git diff
-	exit 1
-        # PHPMDで未使用変数などのチェック
-        #if ! phpmd $FILE text unusedcode,codesize,naming; then
-        #    IS_ERROR=1
-        #fi
+        if ! php-cs-fixer fix $FILE --rules='@PSR2'; then
+           git diff
+           IS_ERROR=1
+        fi
+
+         # PHPMDで未使用変数などのチェック
+        if ! phpmd $FILE text unusedcode,codesize,naming; then
+            IS_ERROR=1
+        fi
     else
         IS_ERROR=1
     fi
